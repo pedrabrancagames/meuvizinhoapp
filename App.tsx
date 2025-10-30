@@ -129,6 +129,22 @@ const MainApp: React.FC = () => {
             window.location.href = '/login';
         }
     }, [firebaseUser]);
+    
+    // Efeito para lidar com status de conexão do Firestore
+    useEffect(() => {
+        const handleOnlineStatus = () => {
+            // Poderíamos adicionar lógica adicional aqui para lidar com mudanças de status de conexão
+            console.log('Status de conexão mudou. Online:', navigator.onLine);
+        };
+        
+        window.addEventListener('online', handleOnlineStatus);
+        window.addEventListener('offline', handleOnlineStatus);
+        
+        return () => {
+            window.removeEventListener('online', handleOnlineStatus);
+            window.removeEventListener('offline', handleOnlineStatus);
+        };
+    }, []);
 
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
