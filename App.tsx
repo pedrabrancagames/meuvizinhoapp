@@ -749,8 +749,8 @@ const AppWrapper: React.FC = () => {
     <Router>
       <AuthProvider>
         <Routes>
-          <Route path="/login" element={<Login onLoginSuccess={() => window.location.href = '/home'} />} />
-          <Route path="/register" element={<Register onRegisterSuccess={() => window.location.href = '/home'} />} />
+          <Route path="/login" element={<Login onLoginSuccess={() => window.location.href = '/'} />} />
+          <Route path="/register" element={<Register onRegisterSuccess={() => window.location.href = '/'} />} />
           <Route 
             path="/*" 
             element={
