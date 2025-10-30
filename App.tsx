@@ -105,7 +105,7 @@ const MainApp: React.FC = () => {
     const [requests, setRequests] = useState<ItemRequest[]>(INITIAL_REQUESTS);
     const [users, setUsers] = useState<Record<string, User>>(INITIAL_USERS);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isCreateEventModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isCreateEventModalOpen, setIsCreateEventModalOpen] = useState(false);
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
     const [isDenounceModalOpen, setIsDenounceModalOpen] = useState(false);
     const [isReportNonReturnModalOpen, setIsReportNonReturnModalOpen] = useState(false);
