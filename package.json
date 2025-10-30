@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:css": "npx tailwindcss -i ./src/index.css -o ./src/tailwind.css",
+    "build:css": "./node_modules/.bin/tailwindcss -i ./src/index.css -o ./src/tailwind.css",
     "vercel-build": "npm run build:css && vite build",
     "preview": "vite preview",
     "firebase:init": "firebase init",
