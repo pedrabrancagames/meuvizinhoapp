@@ -130,21 +130,46 @@ const MainApp: React.FC = () => {
         }
     }, [firebaseUser]);
     
+    // Estado para controlar erros de conexão com o Firestore
+    const [firestoreError, setFirestoreError] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
+    
     // Efeito para lidar com status de conexão do Firestore
     useEffect(() => {
         const handleOnlineStatus = () => {
-            // Poderíamos adicionar lógica adicional aqui para lidar com mudanças de status de conexão
             console.log('Status de conexão mudou. Online:', navigator.onLine);
+            if (navigator.onLine) {
+                // Tentar reconectar ao Firestore quando voltar online
+                setFirestoreError(null);
+                setRetryCount(prev => prev + 1);
+            }
+        };
+        
+        // Listener para erros do Firestore
+        const handleFirestoreError = (error: any) => {
+            console.warn('Erro no Firestore:', error);
+            if (error && error.message) {
+                setFirestoreError(error.message);
+            }
         };
         
         window.addEventListener('online', handleOnlineStatus);
         window.addEventListener('offline', handleOnlineStatus);
         
+        // Tentar reconectar periodicamente se houver erro
+        let reconnectInterval: NodeJS.Timeout;
+        if (firestoreError && retryCount < 5) {
+            reconnectInterval = setTimeout(() => {
+                setRetryCount(prev => prev + 1);
+            }, 5000 * retryCount); // Aumentar o tempo entre tentativas
+        }
+        
         return () => {
             window.removeEventListener('online', handleOnlineStatus);
             window.removeEventListener('offline', handleOnlineStatus);
+            if (reconnectInterval) clearTimeout(reconnectInterval);
         };
-    }, []);
+    }, [firestoreError, retryCount]);
 
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -568,6 +593,25 @@ const MainApp: React.FC = () => {
         INVITE: 'Convidar Vizinhos',
     };
 
+    // Componente para mostrar mensagens de erro de conexão
+    const ConnectionErrorBanner: React.FC = () => {
+        // Verificar erros tanto do Firestore quanto do AuthProvider
+        const hasFirestoreError = firestoreError;
+        const hasAuthError = connectionError;
+        
+        if (!hasFirestoreError && !hasAuthError) return null;
+        
+        return (
+            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+                <p className="font-bold">Problema de conexão</p>
+                <p>Estamos tendo dificuldades para conectar ao servidor. Tentando reconectar...</p>
+                {(retryCount > 0 || hasAuthError) && (
+                    <p className="text-sm mt-1">Tentativa {retryCount} de 5</p>
+                )}
+            </div>
+        );
+    };
+
     const renderScreen = () => {
         if (activeSubPage) {
             switch (activeSubPage) {
@@ -622,6 +666,7 @@ const MainApp: React.FC = () => {
     return (
         <div className="max-w-md mx-auto min-h-screen bg-v-light-bg dark:bg-neutral-900 text-v-neutral dark:text-gray-300 relative pb-20 pt-16">
             {showHeader && <TopHeader screen={activeScreen} onMenuClick={() => handleSetScreen('PROFILE')} onNotificationsClick={handleOpenNotifications} unreadCount={unreadCount}/>}
+            <ConnectionErrorBanner />
             <main className={activeScreen === 'CHAT' || activeSubPage ? "" : "px-4 py-2"}>
                 {renderScreen()}
             </main>

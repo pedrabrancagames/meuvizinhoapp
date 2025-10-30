@@ -2,12 +2,13 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { auth, db } from '../../src/firebase';
 import { onAuthStateChanged, User as FirebaseUser, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendSignInLinkToEmail, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import LoadingSpinner from '../LoadingSpinner';
 
 interface AuthContextType {
   currentUser: FirebaseUser | null;
   loading: boolean;
+  connectionError: string | null;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   loginWithEmailLink: (email: string) => Promise<void>;
@@ -32,6 +33,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   // Função de login com email e senha
   const login = (email: string, password: string) => {
@@ -125,13 +127,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             });
           }
           setCurrentUser(user);
-        } catch (error) {
+          setConnectionError(null);
+        } catch (error: any) {
           console.error('Erro ao verificar/criar usuário no Firestore:', error);
+          
+          // Tratar erros específicos de conexão
+          if (error && (error.code === 'unavailable' || error.code === 'deadline-exceeded')) {
+            setConnectionError('Problemas de conexão com o servidor. Tentando reconectar...');
+          } else {
+            setConnectionError('Erro ao acessar seus dados. Alguns recursos podem estar limitados.');
+          }
+          
           // Mesmo com erro no Firestore, ainda podemos autenticar o usuário no Firebase Auth
           setCurrentUser(user);
         }
       } else {
         setCurrentUser(null);
+        setConnectionError(null);
       }
       setLoading(false);
     });
@@ -142,6 +154,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value = {
     currentUser,
     loading,
+    connectionError,
     login,
     loginWithGoogle,
     loginWithEmailLink,
