@@ -22,6 +22,33 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess }) => {
     setError(null);
     setLoading(true);
 
+    // Validações básicas
+    if (method === 'password') {
+      if (password.length < 6) {
+        setError('A senha deve ter pelo menos 6 caracteres');
+        setLoading(false);
+        return;
+      }
+
+      if (!name.trim()) {
+        setError('Nome é obrigatório');
+        setLoading(false);
+        return;
+      }
+
+      if (!address.trim()) {
+        setError('Endereço é obrigatório');
+        setLoading(false);
+        return;
+      }
+
+      if (!phone.trim()) {
+        setError('Telefone é obrigatório');
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       if (method === 'password') {
         await register(email, password, name, address, phone);
@@ -31,13 +58,59 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess }) => {
         await loginWithEmailLink(email);
         window.localStorage.setItem('emailForSignIn', email);
         setLinkSent(true);
-        
+
         // A criação do usuário no Firestore já é feita no AuthProvider
         setLoading(false);
         return;
       }
-    } catch (err) {
-      setError((err as Error).message);
+    } catch (err: any) {
+      console.error('Erro no cadastro:', err);
+
+      // Tratar erros específicos do Firebase Auth
+      let errorMessage = 'Erro ao criar conta. Tente novamente.';
+
+      if (err.code) {
+        switch (err.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = 'Este email já está sendo usado por outra conta.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Email inválido. Verifique o formato do email.';
+            break;
+          case 'auth/weak-password':
+            errorMessage = 'A senha deve ter pelo menos 6 caracteres.';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
+            break;
+          case 'auth/too-many-requests':
+            errorMessage = 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
+            break;
+          case 'auth/operation-not-allowed':
+            errorMessage = 'Cadastro com email/senha não está habilitado. Entre em contato com o suporte.';
+            break;
+          case 'auth/user-disabled':
+            errorMessage = 'Esta conta foi desabilitada. Entre em contato com o suporte.';
+            break;
+          default:
+            // Traduzir mensagens comuns do Firebase
+            if (err.message.includes('Password should be at least 6 characters')) {
+              errorMessage = 'A senha deve ter pelo menos 6 caracteres.';
+            } else if (err.message.includes('email-already-in-use')) {
+              errorMessage = 'Este email já está sendo usado por outra conta.';
+            } else if (err.message.includes('invalid-email')) {
+              errorMessage = 'Email inválido. Verifique o formato do email.';
+            } else if (err.message.includes('weak-password')) {
+              errorMessage = 'A senha deve ter pelo menos 6 caracteres.';
+            } else {
+              errorMessage = err.message || errorMessage;
+            }
+        }
+      } else {
+        errorMessage = err.message || errorMessage;
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -115,6 +188,9 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess }) => {
                   placeholder="••••••••"
                   required
                 />
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Mínimo de 6 caracteres
+                </p>
               </div>
             )}
 

@@ -106,24 +106,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Função de registro
   const register = async (email: string, password: string, name: string, address: string, phone: string) => {
-    const result = await createUserWithEmailAndPassword(auth, email, password);
-    
-    // Criar perfil no Firestore
-    await setDoc(doc(db, 'users', result.user.uid), {
-      name,
-      email,
-      address,
-      phone,
-      isVerified: false,
-      createdAt: new Date(),
-      reputation: 5.0,
-      loansMade: 0,
-      loansReceived: 0,
-      badges: [],
-      photoURL: result.user.photoURL,
-    });
-    
-    return result;
+    try {
+      console.log('Iniciando cadastro para:', email);
+      
+      // Criar usuário no Firebase Auth
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('Usuário criado no Firebase Auth:', result.user.uid);
+      
+      // Criar perfil no Firestore
+      const userData = {
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        address: address.trim(),
+        phone: phone.trim(),
+        isVerified: false,
+        createdAt: new Date(),
+        reputation: 5.0,
+        loansMade: 0,
+        loansReceived: 0,
+        badges: [],
+        photoURL: result.user.photoURL || null,
+      };
+      
+      await setDoc(doc(db, 'users', result.user.uid), userData);
+      console.log('Perfil criado no Firestore');
+      
+      return result;
+    } catch (error: any) {
+      console.error('Erro detalhado no registro:', error);
+      
+      // Re-lançar o erro para que seja capturado pelo componente
+      throw error;
+    }
   };
 
   // Função de logout
