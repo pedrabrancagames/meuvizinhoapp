@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { auth, db } from '../../src/firebase';
-import { onAuthStateChanged, User as FirebaseUser, signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, getRedirectResult, sendSignInLinkToEmail, createUserWithEmailAndPassword } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser, signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, signInWithPopup, getRedirectResult, sendSignInLinkToEmail, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import LoadingSpinner from '../LoadingSpinner';
 
@@ -43,14 +43,63 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Função de login com Google
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    // Usar signInWithRedirect em vez de signInWithPopup para evitar problemas de CORS
-    await signInWithRedirect(auth, provider);
+    
+    // Configurar parâmetros customizados para o provider
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
+    
+    try {
+      // Detectar se estamos em desenvolvimento ou produção
+      const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      
+      if (isDevelopment) {
+        // Em desenvolvimento, usar popup (mais rápido para testes)
+        const result = await signInWithPopup(auth, provider);
+        
+        // Verificar se é um novo usuário e criar perfil no Firestore
+        const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+        if (!userDoc.exists()) {
+          await setDoc(doc(db, 'users', result.user.uid), {
+            name: result.user.displayName || '',
+            email: result.user.email,
+            address: '',
+            phone: '',
+            isVerified: false,
+            createdAt: new Date(),
+            reputation: 5.0,
+            loansMade: 0,
+            loansReceived: 0,
+            badges: [],
+            photoURL: result.user.photoURL,
+          });
+        }
+      } else {
+        // Em produção, usar redirect (mais confiável)
+        await signInWithRedirect(auth, provider);
+      }
+    } catch (error: any) {
+      console.error('Erro no login com Google:', error);
+      
+      // Se popup falhar (CORS), tentar redirect como fallback
+      if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+        console.log('Popup bloqueado, tentando redirect...');
+        try {
+          await signInWithRedirect(auth, provider);
+        } catch (redirectError: any) {
+          console.error('Erro no redirect:', redirectError);
+          throw new Error('Falha no login com Google. Verifique se popups estão habilitados ou tente novamente.');
+        }
+      } else {
+        throw new Error('Falha no login com Google. Tente novamente.');
+      }
+    }
   };
 
   // Função de login com link por email
   const loginWithEmailLink = async (email: string) => {
     return sendSignInLinkToEmail(auth, email, {
-      url: `${window.location.origin}/home`,
+      url: window.location.origin, // Redirecionar para a raiz da aplicação
       handleCodeInApp: true,
     });
   };
