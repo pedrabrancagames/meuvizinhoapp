@@ -39,24 +39,24 @@ const TopHeader: React.FC<{ screen: Screen, onMenuClick: () => void, onNotificat
     return (
         <header className="fixed top-0 left-0 right-0 max-w-md mx-auto z-30 bg-v-neutral dark:bg-neutral-800 text-white p-4 flex justify-between items-center shadow-md h-16">
             {isNavScreen ? (
-                 <button onClick={onMenuClick} className="p-2">
+                <button onClick={onMenuClick} className="p-2">
                     <MenuIcon className="h-6 w-6" />
                 </button>
             ) : (
-                 <div className="w-10"></div> // Placeholder for alignment
+                <div className="w-10"></div>
             )}
-           
+
             <h1 className="text-xl font-bold">{titleMap[screen]}</h1>
-            
+
             {isNavScreen ? (
                 <button onClick={onNotificationsClick} className="relative p-2">
                     <BellIcon className="h-6 w-6" />
                     {unreadCount > 0 && (
-                         <span className="absolute top-1 right-1 block h-4 w-4 rounded-full bg-v-primary text-white text-xs flex items-center justify-center">{unreadCount}</span>
+                        <span className="absolute top-1 right-1 block h-4 w-4 rounded-full bg-v-primary text-white text-xs flex items-center justify-center">{unreadCount}</span>
                     )}
                 </button>
             ) : (
-                <div className="w-10"></div> // Placeholder for alignment
+                <div className="w-10"></div>
             )}
         </header>
     );
@@ -100,7 +100,7 @@ const MainApp: React.FC = () => {
     const [activeScreen, setActiveScreen] = useState<Screen>('HOME');
     const [previousScreen, setPreviousScreen] = useState<Screen>('HOME');
     const [activeSubPage, setActiveSubPage] = useState<SubPageName | null>(null);
-    
+
     // Estados para dados do Firebase - começam com dados iniciais como fallback
     const [requests, setRequests] = useState<ItemRequest[]>(INITIAL_REQUESTS);
     const [users, setUsers] = useState<Record<string, User>>(INITIAL_USERS);
@@ -116,7 +116,7 @@ const MainApp: React.FC = () => {
     const [showToast, setShowToast] = useState(false);
     const [transactionToReview, setTransactionToReview] = useState<{ request: ItemRequest, lender: User } | null>(null);
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>(INITIAL_CHAT_MESSAGES);
-    const [selectedChatContext, setSelectedChatContext] = useState<{partnerId: string, requestName: string, requestId: string} | null>(null);
+    const [selectedChatContext, setSelectedChatContext] = useState<{ partnerId: string, requestName: string, requestId: string } | null>(null);
     const [events, setEvents] = useState<CommunityEvent[]>(INITIAL_EVENTS);
     const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
 
@@ -124,7 +124,7 @@ const MainApp: React.FC = () => {
     useEffect(() => {
         if (firebaseUser) {
             setLoggedInUserId(firebaseUser.uid);
-            
+
             // Carregar dados do usuário do Firestore
             const loadUserFromFirestore = async () => {
                 try {
@@ -170,18 +170,18 @@ const MainApp: React.FC = () => {
                     }));
                 }
             };
-            
+
             loadUserFromFirestore();
         } else {
             // Redireciona para tela de login
             window.location.href = '/login';
         }
     }, [firebaseUser]);
-    
+
     // Estado para controlar erros de conexão com o Firestore
     const [firestoreError, setFirestoreError] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState(0);
-    
+
     // Efeito para lidar com status de conexão do Firestore
     useEffect(() => {
         const handleOnlineStatus = () => {
@@ -192,7 +192,7 @@ const MainApp: React.FC = () => {
                 setRetryCount(prev => prev + 1);
             }
         };
-        
+
         // Listener para erros do Firestore
         const handleFirestoreError = (error: any) => {
             console.warn('Erro no Firestore:', error);
@@ -200,10 +200,10 @@ const MainApp: React.FC = () => {
                 setFirestoreError(error.message);
             }
         };
-        
+
         window.addEventListener('online', handleOnlineStatus);
         window.addEventListener('offline', handleOnlineStatus);
-        
+
         // Tentar reconectar periodicamente se houver erro
         let reconnectInterval: NodeJS.Timeout;
         if (firestoreError && retryCount < 5) {
@@ -211,7 +211,7 @@ const MainApp: React.FC = () => {
                 setRetryCount(prev => prev + 1);
             }, 5000 * retryCount); // Aumentar o tempo entre tentativas
         }
-        
+
         return () => {
             window.removeEventListener('online', handleOnlineStatus);
             window.removeEventListener('offline', handleOnlineStatus);
@@ -226,15 +226,15 @@ const MainApp: React.FC = () => {
         return false;
     });
 
-    const userNotifications = useMemo(() => 
+    const userNotifications = useMemo(() =>
         notifications.filter(n => n.userId === loggedInUserId)
-    , [notifications, loggedInUserId]);
+        , [notifications, loggedInUserId]);
 
     const unreadCount = userNotifications.filter(n => !n.isRead).length;
 
-    const activeUserRequestsCount = useMemo(() => 
+    const activeUserRequestsCount = useMemo(() =>
         requests.filter(r => r.userId === loggedInUserId && r.status === 'open').length
-    , [requests, loggedInUserId]);
+        , [requests, loggedInUserId]);
 
     useEffect(() => {
         const root = window.document.documentElement;
@@ -246,7 +246,7 @@ const MainApp: React.FC = () => {
             localStorage.setItem('meuvizinho-dark-mode', 'false');
         }
     }, [isDarkMode]);
-    
+
     // Efeito para carregar dados do Firebase (exemplo básico)
     useEffect(() => {
         const loadFirebaseData = async () => {
@@ -264,7 +264,7 @@ const MainApp: React.FC = () => {
 
         loadFirebaseData();
     }, []);
-    
+
     const handleSetScreen = (screen: Screen) => {
         if (screen !== activeScreen) {
             setPreviousScreen(activeScreen);
@@ -309,12 +309,12 @@ const MainApp: React.FC = () => {
             status: 'open',
             ...newRequestData,
         };
-        
+
         try {
             // Salvar no Firebase
             // const docRef = await addDoc(collection(db, 'requests'), newRequest);
             // console.log('Documento salvo com ID:', docRef.id);
-            
+
             // Por enquanto, continuar usando estado local até que o Firebase esteja totalmente integrado
             setRequests(prev => [newRequest, ...prev]);
             setIsCreateModalOpen(false);
@@ -336,12 +336,12 @@ const MainApp: React.FC = () => {
             interestedUserIds: [],
             ...newEventData,
         };
-        
+
         try {
             // Salvar no Firebase
             // const docRef = await addDoc(collection(db, 'events'), newEvent);
             // console.log('Evento salvo com ID:', docRef.id);
-            
+
             // Por enquanto, continuar usando estado local até que o Firebase esteja totalmente integrado
             setEvents(prev => [newEvent, ...prev]);
             setIsCreateEventModalOpen(false);
@@ -352,7 +352,7 @@ const MainApp: React.FC = () => {
             setIsCreateEventModalOpen(false);
         }
     };
-    
+
     const handleSubmitReview = (review: Review) => {
         if (!loggedInUserId || !transactionToReview) return;
         const reviewer = users[loggedInUserId];
@@ -360,7 +360,7 @@ const MainApp: React.FC = () => {
         if (!reviewer || !reviewedUser) return;
 
         const newNotifications: Notification[] = [];
-        
+
         const reviewNotification: Notification = {
             id: `notif-${Date.now()}`,
             userId: review.reviewedUserId,
@@ -379,7 +379,7 @@ const MainApp: React.FC = () => {
             reputation: Math.round(newReputation * 10) / 10,
             loansMade: totalLoans,
         };
-        
+
         const badgeChecks: { loans: number, badge: BadgeType, text: string }[] = [
             { loans: 10, badge: 'BOM_VIZINHO', text: 'Parabéns! Você ganhou o selo "Bom Vizinho" por realizar 10 empréstimos.' },
         ];
@@ -407,7 +407,7 @@ const MainApp: React.FC = () => {
         if (newNotifications.length > 0) {
             setNotifications(prev => [...newNotifications, ...prev]);
         }
-        
+
         setIsReviewModalOpen(false);
         setTransactionToReview(null);
     };
@@ -416,7 +416,7 @@ const MainApp: React.FC = () => {
         setSelectedChatContext({ partnerId, requestName, requestId });
         handleSetScreen('CHAT');
     };
-    
+
     const handleSendMessage = (text: string) => {
         if (!selectedChatContext || !loggedInUserId) return;
         const { partnerId, requestName } = selectedChatContext;
@@ -450,7 +450,7 @@ const MainApp: React.FC = () => {
 
     const handleOfferHelp = (requestId: string, requestOwnerId: string, requestName: string) => {
         if (!loggedInUserId) return;
-        
+
         const offeringUser = users[loggedInUserId];
         if (offeringUser) {
             const newOfferNotification: Notification = {
@@ -463,7 +463,7 @@ const MainApp: React.FC = () => {
             };
             setNotifications(prev => [newOfferNotification, ...prev]);
         }
-        
+
         setRequests(prevRequests => {
             const newRequests = [...prevRequests];
             const requestIndex = newRequests.findIndex(r => r.id === requestId);
@@ -501,14 +501,14 @@ const MainApp: React.FC = () => {
         );
 
         if (status === 'completed' && request.offers && request.offers.length > 0) {
-            const lender = users[request.offers[0].userId]; 
+            const lender = users[request.offers[0].userId];
             if (lender) {
                 setTransactionToReview({ request, lender });
                 setIsReviewModalOpen(true);
             }
         }
     };
-    
+
     const handleToggleEventInterest = (eventId: string) => {
         if (!loggedInUserId) return;
         setEvents(prevEvents => {
@@ -531,7 +531,7 @@ const MainApp: React.FC = () => {
             });
         });
     };
-    
+
     const handleOpenDenounceModal = (requestId: string) => {
         const request = requests.find(r => r.id === requestId);
         if (request) {
@@ -539,7 +539,7 @@ const MainApp: React.FC = () => {
             setIsDenounceModalOpen(true);
         }
     };
-    
+
     const handleConfirmDenounce = () => {
         if (requestToDenounce) {
             setDenouncedRequestIds(prev => new Set(prev).add(requestToDenounce.id));
@@ -583,7 +583,7 @@ const MainApp: React.FC = () => {
 
     const handleConfirmReportNonReturn = () => {
         if (!requestToReport || !loggedInUserId) return;
-        
+
         const borrowerId = requestToReport.userId;
         const borrower = users[borrowerId];
         const lender = users[loggedInUserId];
@@ -608,7 +608,7 @@ const MainApp: React.FC = () => {
             isRead: false,
             createdAt: 'agora',
         };
-         const confirmationNotification: Notification = {
+        const confirmationNotification: Notification = {
             id: `notif-${Date.now()}-confirm`,
             userId: loggedInUserId,
             type: 'penalty',
@@ -617,7 +617,7 @@ const MainApp: React.FC = () => {
             createdAt: 'agora',
         };
         setNotifications(prev => [penaltyNotification, confirmationNotification, ...prev]);
-        
+
         setIsReportNonReturnModalOpen(false);
         setRequestToReport(null);
         setShowToast(true);
@@ -626,7 +626,7 @@ const MainApp: React.FC = () => {
 
     const userFromFirestore = users[loggedInUserId];
     if (!userFromFirestore) return <LoadingSpinner />;
-    
+
     const requestLimit = userFromFirestore.isVerified ? 5 : 3;
     const isRequestLimitReached = activeUserRequestsCount >= requestLimit;
 
@@ -646,9 +646,9 @@ const MainApp: React.FC = () => {
         // Verificar erros tanto do Firestore quanto do AuthProvider
         const hasFirestoreError = firestoreError;
         const hasAuthError = connectionError;
-        
+
         if (!hasFirestoreError && !hasAuthError) return null;
-        
+
         return (
             <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
                 <p className="font-bold">Problema de conexão</p>
@@ -671,7 +671,7 @@ const MainApp: React.FC = () => {
                     return <SubPage title={subPageTitleMap[activeSubPage]} onBack={handleBackFromSubPage} />;
             }
         }
-        
+
         switch (activeScreen) {
             case 'HOME':
                 const visibleRequests = requests.filter(r => !denouncedRequestIds.has(r.id) && !dismissedRequestIds.has(r.id));
@@ -684,13 +684,13 @@ const MainApp: React.FC = () => {
                 return <Notifications notifications={userNotifications} onMarkAsRead={handleMarkAsRead} onMarkAllAsRead={handleMarkAllAsRead} onBack={() => handleSetScreen(previousScreen)} />;
             case 'CHAT':
                 if (!selectedChatContext) {
-                     setActiveScreen('HOME');
-                     const visibleRequests = requests.filter(r => !denouncedRequestIds.has(r.id) && !dismissedRequestIds.has(r.id));
-                     return <Home requests={visibleRequests} users={users} onOfferHelp={handleOfferHelp} onDenounce={handleOpenDenounceModal} onDismiss={handleDismissRequest} loggedInUserId={loggedInUserId} />;
+                    setActiveScreen('HOME');
+                    const visibleRequests = requests.filter(r => !denouncedRequestIds.has(r.id) && !dismissedRequestIds.has(r.id));
+                    return <Home requests={visibleRequests} users={users} onOfferHelp={handleOfferHelp} onDenounce={handleOpenDenounceModal} onDismiss={handleDismissRequest} loggedInUserId={loggedInUserId} />;
                 }
                 const chatPartner = users[selectedChatContext.partnerId];
                 return (
-                    <Chat 
+                    <Chat
                         partner={chatPartner}
                         chatContext={selectedChatContext}
                         messages={chatMessages}
@@ -703,24 +703,24 @@ const MainApp: React.FC = () => {
             case 'PROFILE':
                 return <Profile user={userFromFirestore} isDarkMode={isDarkMode} onToggleDarkMode={toggleDarkMode} onNavigateToSubPage={handleNavigateToSubPage} />;
             default:
-                 const defaultVisibleRequests = requests.filter(r => !denouncedRequestIds.has(r.id) && !dismissedRequestIds.has(r.id));
+                const defaultVisibleRequests = requests.filter(r => !denouncedRequestIds.has(r.id) && !dismissedRequestIds.has(r.id));
                 return <Home requests={defaultVisibleRequests} users={users} onOfferHelp={handleOfferHelp} onDenounce={handleOpenDenounceModal} onDismiss={handleDismissRequest} loggedInUserId={loggedInUserId} />;
         }
     };
-    
+
     const showHeader = activeScreen !== 'CHAT' && activeScreen !== 'NOTIFICATIONS' && !activeSubPage;
     const showNav = activeScreen !== 'CHAT' && activeScreen !== 'NOTIFICATIONS' && !activeSubPage;
 
     return (
         <div className="max-w-md mx-auto min-h-screen bg-v-light-bg dark:bg-neutral-900 text-v-neutral dark:text-gray-300 relative pb-20 pt-16">
-            {showHeader && <TopHeader screen={activeScreen} onMenuClick={() => handleSetScreen('PROFILE')} onNotificationsClick={handleOpenNotifications} unreadCount={unreadCount}/>}
+            {showHeader && <TopHeader screen={activeScreen} onMenuClick={() => handleSetScreen('PROFILE')} onNotificationsClick={handleOpenNotifications} unreadCount={unreadCount} />}
             <ConnectionErrorBanner />
             <main className={activeScreen === 'CHAT' || activeSubPage ? "" : "px-4 py-2"}>
                 {renderScreen()}
             </main>
             {activeScreen === 'HOME' && (
-                 <div className="relative group">
-                    <button 
+                <div className="relative group">
+                    <button
                         onClick={() => !isRequestLimitReached && setIsCreateModalOpen(true)}
                         disabled={isRequestLimitReached}
                         className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-v-primary text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-opacity-90 transition-all duration-200 z-20 disabled:bg-gray-400 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed"
@@ -735,10 +735,10 @@ const MainApp: React.FC = () => {
                 </div>
             )}
             {activeScreen === 'EVENTS' && (
-                 <button 
+                <button
                     onClick={() => setIsCreateEventModalOpen(true)}
                     className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-v-secondary text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-opacity-90 transition-all duration-200 z-20 flex items-center"
-                  >
+                >
                     <PlusIcon className="w-6 h-6 mr-2" />
                     <span>Criar Evento</span>
                 </button>
@@ -766,7 +766,7 @@ const MainApp: React.FC = () => {
                     onSubmit={handleSubmitReview}
                 />
             )}
-             {isDenounceModalOpen && requestToDenounce && (
+            {isDenounceModalOpen && requestToDenounce && (
                 <DenounceModal
                     request={requestToDenounce}
                     user={users[requestToDenounce.userId]}
@@ -793,24 +793,24 @@ const MainApp: React.FC = () => {
 
 // Componente App wrapper com o Router
 const AppWrapper: React.FC = () => {
-  return (
-    <Router>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login onLoginSuccess={() => window.location.href = '/'} />} />
-          <Route path="/register" element={<Register onRegisterSuccess={() => window.location.href = '/'} />} />
-          <Route 
-            path="/*" 
-            element={
-              <ProtectedRoute>
-                <MainApp />
-              </ProtectedRoute>
-            } 
-          />
-        </Routes>
-      </AuthProvider>
-    </Router>
-  );
+    return (
+        <Router>
+            <AuthProvider>
+                <Routes>
+                    <Route path="/login" element={<Login onLoginSuccess={() => window.location.href = '/'} />} />
+                    <Route path="/register" element={<Register onRegisterSuccess={() => window.location.href = '/'} />} />
+                    <Route
+                        path="/*"
+                        element={
+                            <ProtectedRoute>
+                                <MainApp />
+                            </ProtectedRoute>
+                        }
+                    />
+                </Routes>
+            </AuthProvider>
+        </Router>
+    );
 };
 
 export default AppWrapper;
