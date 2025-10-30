@@ -22,7 +22,7 @@ import Register from './components/auth/Register';
 import { INITIAL_REQUESTS, INITIAL_CHAT_MESSAGES, USERS as INITIAL_USERS, INITIAL_EVENTS, INITIAL_NOTIFICATIONS } from './constants';
 import { auth, db } from './src/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, getDocs, query, where, addDoc, updateDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, query, where, addDoc, updateDoc, doc, getDoc } from 'firebase/firestore';
 
 const TopHeader: React.FC<{ screen: Screen, onMenuClick: () => void, onNotificationsClick: () => void, unreadCount: number }> = ({ screen, onMenuClick, onNotificationsClick, unreadCount }) => {
     const titleMap: Record<Screen, string> = {
@@ -124,6 +124,54 @@ const MainApp: React.FC = () => {
     useEffect(() => {
         if (firebaseUser) {
             setLoggedInUserId(firebaseUser.uid);
+            
+            // Carregar dados do usuário do Firestore
+            const loadUserFromFirestore = async () => {
+                try {
+                    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        // Adicionar o usuário ao estado users
+                        setUsers(prevUsers => ({
+                            ...prevUsers,
+                            [firebaseUser.uid]: {
+                                id: firebaseUser.uid,
+                                name: userData.name || firebaseUser.displayName || 'Usuário',
+                                email: userData.email || firebaseUser.email || '',
+                                address: userData.address || '',
+                                phone: userData.phone || '',
+                                isVerified: userData.isVerified || false,
+                                reputation: userData.reputation || 5.0,
+                                loansMade: userData.loansMade || 0,
+                                loansReceived: userData.loansReceived || 0,
+                                badges: userData.badges || [],
+                                photoURL: userData.photoURL || firebaseUser.photoURL,
+                            }
+                        }));
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar usuário do Firestore:', error);
+                    // Criar usuário com dados básicos do Firebase Auth como fallback
+                    setUsers(prevUsers => ({
+                        ...prevUsers,
+                        [firebaseUser.uid]: {
+                            id: firebaseUser.uid,
+                            name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Usuário',
+                            email: firebaseUser.email || '',
+                            address: '',
+                            phone: '',
+                            isVerified: false,
+                            reputation: 5.0,
+                            loansMade: 0,
+                            loansReceived: 0,
+                            badges: [],
+                            photoURL: firebaseUser.photoURL,
+                        }
+                    }));
+                }
+            };
+            
+            loadUserFromFirestore();
         } else {
             // Redireciona para tela de login
             window.location.href = '/login';
