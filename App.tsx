@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from './components/auth/AuthProvider';
 import type { Screen, ItemRequest, ChatMessage, Offer, CommunityEvent, Review, User, Notification, BadgeType, SubPageName, EditableUser } from './types';
 import { HomeIcon, ListIcon, UserIcon, BellIcon, MenuIcon, CalendarDaysIcon, PlusIcon } from './components/Icons';
 import Home from './components/Home';
@@ -15,6 +17,8 @@ import Notifications from './components/Notifications';
 import SubPage from './components/SubPage';
 import EditProfile from './components/EditProfile';
 import Invite from './components/Invite';
+import Login from './components/auth/Login';
+import Register from './components/auth/Register';
 import { INITIAL_REQUESTS, INITIAL_CHAT_MESSAGES, USERS as INITIAL_USERS, INITIAL_EVENTS, INITIAL_NOTIFICATIONS } from './constants';
 import { auth, db } from './src/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -89,8 +93,10 @@ const LoadingSpinner: React.FC = () => (
 );
 
 
-export default function App() {
-    const [loggedInUserId, setLoggedInUserId] = useState<string>('user-1-uid');
+// Componente principal do aplicativo após o login
+const MainApp: React.FC = () => {
+    const { currentUser } = useAuth();
+    const [loggedInUserId, setLoggedInUserId] = useState<string>('');
     const [activeScreen, setActiveScreen] = useState<Screen>('HOME');
     const [previousScreen, setPreviousScreen] = useState<Screen>('HOME');
     const [activeSubPage, setActiveSubPage] = useState<SubPageName | null>(null);
@@ -116,18 +122,13 @@ export default function App() {
 
     // Efeito para autenticar usuário com Firebase
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                setLoggedInUserId(user.uid);
-            } else {
-                // Para fins de demonstração, manter usuário padrão
-                // Em produção, redirecionaria para tela de login
-                setLoggedInUserId('user-1-uid');
-            }
-        });
-
-        return () => unsubscribe();
-    }, []);
+        if (currentUser) {
+            setLoggedInUserId(currentUser.uid);
+        } else {
+            // Redireciona para tela de login
+            window.location.href = '/login';
+        }
+    }, [currentUser]);
 
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -679,4 +680,28 @@ export default function App() {
             )}
         </div>
     );
-}
+};
+
+// Componente App wrapper com o Router
+const AppWrapper: React.FC = () => {
+  return (
+    <Router>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login onLoginSuccess={() => window.location.href = '/home'} />} />
+          <Route path="/register" element={<Register onRegisterSuccess={() => window.location.href = '/home'} />} />
+          <Route 
+            path="/*" 
+            element={
+              <ProtectedRoute>
+                <MainApp />
+              </ProtectedRoute>
+            } 
+          />
+        </Routes>
+      </AuthProvider>
+    </Router>
+  );
+};
+
+export default AppWrapper;
