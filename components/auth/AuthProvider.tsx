@@ -43,23 +43,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
     
-    // Verificar se é um novo usuário e criar perfil no Firestore
-    const userDoc = await getDoc(doc(db, 'users', result.user.uid));
-    if (!userDoc.exists()) {
-      // Criar perfil para novo usuário do Google
-      await setDoc(doc(db, 'users', result.user.uid), {
-        name: result.user.displayName || '',
-        email: result.user.email,
-        address: '',
-        phone: '',
-        isVerified: false,
-        createdAt: new Date(),
-        reputation: 5.0,
-        loansMade: 0,
-        loansReceived: 0,
-        badges: [],
-        photoURL: result.user.photoURL,
-      });
+    try {
+      // Verificar se é um novo usuário e criar perfil no Firestore
+      const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+      if (!userDoc.exists()) {
+        // Criar perfil para novo usuário do Google
+        await setDoc(doc(db, 'users', result.user.uid), {
+          name: result.user.displayName || '',
+          email: result.user.email,
+          address: '',
+          phone: '',
+          isVerified: false,
+          createdAt: new Date(),
+          reputation: 5.0,
+          loansMade: 0,
+          loansReceived: 0,
+          badges: [],
+          photoURL: result.user.photoURL,
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao criar perfil do usuário no Firestore:', error);
+      // Prosseguir com o login mesmo que ocorra erro no Firestore
     }
   };
 
@@ -101,24 +106,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Verificar se o usuário existe no Firestore, se não existir, criar perfil padrão
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (!userDoc.exists()) {
-          await setDoc(doc(db, 'users', user.uid), {
-            name: user.displayName || user.email?.split('@')[0] || 'Usuário',
-            email: user.email,
-            address: '',
-            phone: '',
-            isVerified: false,
-            createdAt: new Date(),
-            reputation: 5.0,
-            loansMade: 0,
-            loansReceived: 0,
-            badges: [],
-            photoURL: user.photoURL,
-          });
+        try {
+          // Verificar se o usuário existe no Firestore, se não existir, criar perfil padrão
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (!userDoc.exists()) {
+            await setDoc(doc(db, 'users', user.uid), {
+              name: user.displayName || user.email?.split('@')[0] || 'Usuário',
+              email: user.email,
+              address: '',
+              phone: '',
+              isVerified: false,
+              createdAt: new Date(),
+              reputation: 5.0,
+              loansMade: 0,
+              loansReceived: 0,
+              badges: [],
+              photoURL: user.photoURL,
+            });
+          }
+          setCurrentUser(user);
+        } catch (error) {
+          console.error('Erro ao verificar/criar usuário no Firestore:', error);
+          // Mesmo com erro no Firestore, ainda podemos autenticar o usuário no Firebase Auth
+          setCurrentUser(user);
         }
-        setCurrentUser(user);
       } else {
         setCurrentUser(null);
       }
