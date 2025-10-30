@@ -16,7 +16,7 @@ import SubPage from './components/SubPage';
 import EditProfile from './components/EditProfile';
 import Invite from './components/Invite';
 import { INITIAL_REQUESTS, INITIAL_CHAT_MESSAGES, USERS as INITIAL_USERS, INITIAL_EVENTS, INITIAL_NOTIFICATIONS } from './constants';
-import { auth, db } from './firebase';
+import { auth, db } from './src/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, getDocs, query, where, addDoc, updateDoc, doc } from 'firebase/firestore';
 
