@@ -1,24 +1,21 @@
 import React, { useState } from 'react';
 import { GoogleIcon } from './Icons';
-
-// HACK: Firebase é carregado via CDN, então precisamos informar ao TypeScript sobre ele.
-declare const firebase: any;
+import { useAuth } from './auth/AuthProvider';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [emailSent, setEmailSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { loginWithGoogle, loginWithEmailLink } = useAuth();
   
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      await firebase.auth().signInWithRedirect(provider);
-      // O listener onAuthStateChanged no App.tsx cuidará da navegação após o redirecionamento.
+      await loginWithGoogle();
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Erro ao fazer login com Google');
       setIsLoading(false);
     }
   };
@@ -28,13 +25,8 @@ export default function Login() {
     setIsLoading(true);
     setError(null);
 
-    const actionCodeSettings = {
-      url: window.location.href, // URL para redirecionar após o clique no link
-      handleCodeInApp: true,
-    };
-
     try {
-      await firebase.auth().sendSignInLinkToEmail(email, actionCodeSettings);
+      await loginWithEmailLink(email);
       window.localStorage.setItem('emailForSignIn', email);
       setEmailSent(true);
     } catch (err: any) {

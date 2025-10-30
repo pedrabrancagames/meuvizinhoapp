@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { auth, db } from '../../src/firebase';
-import { onAuthStateChanged, User as FirebaseUser, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendSignInLinkToEmail, createUserWithEmailAndPassword } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser, signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, getRedirectResult, sendSignInLinkToEmail, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import LoadingSpinner from '../LoadingSpinner';
 
@@ -43,31 +43,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Função de login com Google
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
-    
-    try {
-      // Verificar se é um novo usuário e criar perfil no Firestore
-      const userDoc = await getDoc(doc(db, 'users', result.user.uid));
-      if (!userDoc.exists()) {
-        // Criar perfil para novo usuário do Google
-        await setDoc(doc(db, 'users', result.user.uid), {
-          name: result.user.displayName || '',
-          email: result.user.email,
-          address: '',
-          phone: '',
-          isVerified: false,
-          createdAt: new Date(),
-          reputation: 5.0,
-          loansMade: 0,
-          loansReceived: 0,
-          badges: [],
-          photoURL: result.user.photoURL,
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao criar perfil do usuário no Firestore:', error);
-      // Prosseguir com o login mesmo que ocorra erro no Firestore
-    }
+    // Usar signInWithRedirect em vez de signInWithPopup para evitar problemas de CORS
+    await signInWithRedirect(auth, provider);
   };
 
   // Função de login com link por email
@@ -106,6 +83,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
+    // Verificar se há resultado de redirecionamento do Google
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          // Verificar se é um novo usuário e criar perfil no Firestore
+          const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+          if (!userDoc.exists()) {
+            await setDoc(doc(db, 'users', result.user.uid), {
+              name: result.user.displayName || '',
+              email: result.user.email,
+              address: '',
+              phone: '',
+              isVerified: false,
+              createdAt: new Date(),
+              reputation: 5.0,
+              loansMade: 0,
+              loansReceived: 0,
+              badges: [],
+              photoURL: result.user.photoURL,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao processar resultado do redirecionamento:', error);
+      }
+    };
+
+    handleRedirectResult();
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {

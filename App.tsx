@@ -95,7 +95,7 @@ const LoadingSpinner: React.FC = () => (
 
 // Componente principal do aplicativo após o login
 const MainApp: React.FC = () => {
-    const { currentUser: firebaseUser } = useAuth();
+    const { currentUser: firebaseUser, connectionError } = useAuth();
     const [loggedInUserId, setLoggedInUserId] = useState<string>('');
     const [activeScreen, setActiveScreen] = useState<Screen>('HOME');
     const [previousScreen, setPreviousScreen] = useState<Screen>('HOME');

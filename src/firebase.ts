@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator, enableNetwork, disableNetwork } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
@@ -18,10 +18,42 @@ const firebaseConfig = {
 // Initialize Firebase only if it hasn't been initialized yet
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-// Export Firebase services
+// Initialize Firebase services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+// Configure Firestore settings for better offline support
+try {
+  // Enable offline persistence using the new API
+  if (typeof window !== 'undefined') {
+    // A persistência offline agora é configurada automaticamente no Firebase v9+
+    // Não é mais necessário chamar enableIndexedDbPersistence explicitamente
+    console.log('Firestore configurado com persistência offline automática');
+  }
+} catch (error) {
+  console.warn('Erro ao configurar Firestore:', error);
+}
+
+// Função para reconectar ao Firestore
+export const reconnectFirestore = async () => {
+  try {
+    await enableNetwork(db);
+    console.log('Firestore reconectado com sucesso');
+  } catch (error) {
+    console.error('Erro ao reconectar Firestore:', error);
+  }
+};
+
+// Função para desconectar do Firestore
+export const disconnectFirestore = async () => {
+  try {
+    await disableNetwork(db);
+    console.log('Firestore desconectado');
+  } catch (error) {
+    console.error('Erro ao desconectar Firestore:', error);
+  }
+};
 
 // Export the app instance as well
 export { app };

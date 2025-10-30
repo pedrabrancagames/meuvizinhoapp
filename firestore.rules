@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Regras para usuários - apenas o próprio usuário pode ler/escrever seus dados
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Regras para pedidos - usuários autenticados podem ler todos, mas só podem escrever os próprios
+    match /requests/{requestId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow update: if request.auth != null && 
+        (request.auth.uid == resource.data.userId || 
+         request.auth.uid in resource.data.allowedUsers);
+    }
+    
+    // Regras para eventos - usuários autenticados podem ler todos, mas só podem escrever os próprios
+    match /events/{eventId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == resource.data.creatorId;
+      allow update: if request.auth != null && request.auth.uid == resource.data.creatorId;
+    }
+    
+    // Regras para notificações - apenas o usuário pode ler suas próprias notificações
+    match /notifications/{notificationId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    // Regras para mensagens de chat - usuários podem ler/escrever se forem participantes
+    match /chats/{chatId}/messages/{messageId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+    }
+    
+    // Regras para chats - usuários podem ler/escrever se forem participantes
+    match /chats/{chatId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid in resource.data.participants;
+    }
+  }
+}
