@@ -1,0 +1,7 @@
+{
+  "name": "MeuVizinhoApp",
+  "description": "Uma plataforma que conecta vizinhos para empréstimo de objetos e divulgação de eventos, facilitando a economia colaborativa e fortalecendo laços comunitários.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
