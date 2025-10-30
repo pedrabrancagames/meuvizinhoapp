@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "vercel-build": "vite build",
     "preview": "vite preview",
     "firebase:init": "firebase init",
     "firebase:deploy": "node deploy-firestore.js",
