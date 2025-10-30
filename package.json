@@ -18,7 +18,8 @@
     "firebase": "^11.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-router-dom": "^7.9.5"
+    "react-router-dom": "^7.9.5",
+    "tailwindcss": "^4.1.16"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.16",
@@ -29,7 +30,6 @@
     "autoprefixer": "^10.4.21",
     "firebase-tools": "^13.0.0",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.16",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }
