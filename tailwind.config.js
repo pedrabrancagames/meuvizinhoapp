@@ -4,10 +4,14 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
-    "./App.tsx"
+    "./App.tsx",
+    "./*.{js,ts,jsx,tsx}"
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Plus Jakarta Sans', 'sans-serif'],
+      },
       colors: {
         'v-primary': '#FF888E', // coral suave
         'v-secondary': '#5FAFBD', // azul-turquesa
