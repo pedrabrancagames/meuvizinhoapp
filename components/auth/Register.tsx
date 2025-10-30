@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
 
 interface RegisterProps {
@@ -6,6 +7,7 @@ interface RegisterProps {
 }
 
 const Register: React.FC<RegisterProps> = ({ onRegisterSuccess }) => {
+  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

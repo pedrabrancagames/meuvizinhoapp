@@ -146,11 +146,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
+    console.log('AuthProvider: Iniciando configuração de autenticação');
+    
     // Verificar se há resultado de redirecionamento do Google
     const handleRedirectResult = async () => {
       try {
         const result = await getRedirectResult(auth);
         if (result && result.user) {
+          console.log('AuthProvider: Resultado de redirecionamento encontrado:', result.user.uid);
           // Verificar se é um novo usuário e criar perfil no Firestore
           const userDoc = await getDoc(doc(db, 'users', result.user.uid));
           if (!userDoc.exists()) {
@@ -176,12 +179,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     handleRedirectResult();
 
+    // Timeout de segurança para evitar loading infinito
+    const loadingTimeout = setTimeout(() => {
+      console.warn('AuthProvider: Timeout de loading atingido, forçando loading = false');
+      setLoading(false);
+    }, 10000); // 10 segundos
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('AuthProvider: onAuthStateChanged chamado, usuário:', user ? user.uid : 'null');
+      
+      // Limpar timeout pois o callback foi chamado
+      clearTimeout(loadingTimeout);
+      
       if (user) {
         try {
+          console.log('AuthProvider: Verificando usuário no Firestore:', user.uid);
           // Verificar se o usuário existe no Firestore, se não existir, criar perfil padrão
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (!userDoc.exists()) {
+            console.log('AuthProvider: Criando perfil no Firestore para:', user.uid);
             await setDoc(doc(db, 'users', user.uid), {
               name: user.displayName || user.email?.split('@')[0] || 'Usuário',
               email: user.email,
@@ -196,6 +212,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               photoURL: user.photoURL,
             });
           }
+          console.log('AuthProvider: Usuário autenticado com sucesso');
           setCurrentUser(user);
           setConnectionError(null);
         } catch (error: any) {
@@ -212,13 +229,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setCurrentUser(user);
         }
       } else {
+        console.log('AuthProvider: Nenhum usuário autenticado');
         setCurrentUser(null);
         setConnectionError(null);
       }
+      
+      console.log('AuthProvider: Definindo loading = false');
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      clearTimeout(loadingTimeout);
+      unsubscribe();
+    };
   }, []);
 
   const value = {
