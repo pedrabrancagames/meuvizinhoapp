@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from './components/auth/AuthProvider';
+import { useAuth, AuthProvider, ProtectedRoute } from './components/auth/AuthProvider';
 import type { Screen, ItemRequest, ChatMessage, Offer, CommunityEvent, Review, User, Notification, BadgeType, SubPageName, EditableUser } from './types';
 import { HomeIcon, ListIcon, UserIcon, BellIcon, MenuIcon, CalendarDaysIcon, PlusIcon } from './components/Icons';
 import Home from './components/Home';
