@@ -95,7 +95,7 @@ const LoadingSpinner: React.FC = () => (
 
 // Componente principal do aplicativo após o login
 const MainApp: React.FC = () => {
-    const { currentUser } = useAuth();
+    const { currentUser: firebaseUser } = useAuth();
     const [loggedInUserId, setLoggedInUserId] = useState<string>('');
     const [activeScreen, setActiveScreen] = useState<Screen>('HOME');
     const [previousScreen, setPreviousScreen] = useState<Screen>('HOME');
@@ -105,7 +105,7 @@ const MainApp: React.FC = () => {
     const [requests, setRequests] = useState<ItemRequest[]>(INITIAL_REQUESTS);
     const [users, setUsers] = useState<Record<string, User>>(INITIAL_USERS);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isCreateEventModalOpen, setIsCreateEventModalOpen] = useState(false);
+    const [isCreateEventModalOpen, setIsCreateModalOpen] = useState(false);
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
     const [isDenounceModalOpen, setIsDenounceModalOpen] = useState(false);
     const [isReportNonReturnModalOpen, setIsReportNonReturnModalOpen] = useState(false);
@@ -122,13 +122,13 @@ const MainApp: React.FC = () => {
 
     // Efeito para autenticar usuário com Firebase
     useEffect(() => {
-        if (currentUser) {
-            setLoggedInUserId(currentUser.uid);
+        if (firebaseUser) {
+            setLoggedInUserId(firebaseUser.uid);
         } else {
             // Redireciona para tela de login
             window.location.href = '/login';
         }
-    }, [currentUser]);
+    }, [firebaseUser]);
 
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -535,10 +535,10 @@ const MainApp: React.FC = () => {
         setTimeout(() => setShowToast(false), 3000);
     };
 
-    const currentUser = users[loggedInUserId];
-    if (!currentUser) return <LoadingSpinner />;
+    const userFromFirestore = users[loggedInUserId];
+    if (!userFromFirestore) return <LoadingSpinner />;
     
-    const requestLimit = currentUser.isVerified ? 5 : 3;
+    const requestLimit = userFromFirestore.isVerified ? 5 : 3;
     const isRequestLimitReached = activeUserRequestsCount >= requestLimit;
 
     const subPageTitleMap: Record<SubPageName, string> = {
@@ -556,9 +556,9 @@ const MainApp: React.FC = () => {
         if (activeSubPage) {
             switch (activeSubPage) {
                 case 'EDITAR_PERFIL':
-                    return <EditProfile user={currentUser} onSave={handleUpdateProfile} onBack={handleBackFromSubPage} />;
+                    return <EditProfile user={userFromFirestore} onSave={handleUpdateProfile} onBack={handleBackFromSubPage} />;
                 case 'INVITE':
-                    return <Invite user={currentUser} allUsers={users} onBack={handleBackFromSubPage} />;
+                    return <Invite user={userFromFirestore} allUsers={users} onBack={handleBackFromSubPage} />;
                 default:
                     return <SubPage title={subPageTitleMap[activeSubPage]} onBack={handleBackFromSubPage} />;
             }
@@ -593,7 +593,7 @@ const MainApp: React.FC = () => {
                     />
                 );
             case 'PROFILE':
-                return <Profile user={currentUser} isDarkMode={isDarkMode} onToggleDarkMode={toggleDarkMode} onNavigateToSubPage={handleNavigateToSubPage} />;
+                return <Profile user={userFromFirestore} isDarkMode={isDarkMode} onToggleDarkMode={toggleDarkMode} onNavigateToSubPage={handleNavigateToSubPage} />;
             default:
                  const defaultVisibleRequests = requests.filter(r => !denouncedRequestIds.has(r.id) && !dismissedRequestIds.has(r.id));
                 return <Home requests={defaultVisibleRequests} users={users} onOfferHelp={handleOfferHelp} onDenounce={handleOpenDenounceModal} onDismiss={handleDismissRequest} loggedInUserId={loggedInUserId} />;
@@ -641,7 +641,7 @@ const MainApp: React.FC = () => {
                     onClose={() => setIsCreateModalOpen(false)}
                     onCreateRequest={handleCreateRequest}
                     activeUserRequestsCount={activeUserRequestsCount}
-                    userIsVerified={currentUser.isVerified}
+                    userIsVerified={userFromFirestore.isVerified}
                 />
             )}
             {isCreateEventModalOpen && (
