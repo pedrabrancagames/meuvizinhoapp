@@ -1,9 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { auth } from '../src/firebase';
+import { auth, db } from '../../src/firebase';
 import { onAuthStateChanged, User as FirebaseUser, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendSignInLinkToEmail, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../src/firebase';
 import LoadingSpinner from './LoadingSpinner';
 
 interface AuthContextType {
